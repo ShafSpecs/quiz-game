@@ -7,13 +7,16 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var reader = bufio.NewReader(os.Stdin)
 
+// fmt.Scan also reads input from standard input device
 func input() int {
 	// ReadString will block until the delimiter is entered
 	input, err := reader.ReadString('\n')
@@ -73,6 +76,8 @@ func readFile(fileName ...string) map[string]int {
 
 func main() {
 	fileName := flag.String("filename", "problems.csv", "")
+	timeLimit := flag.Int("timer", 10, "")
+	shuffle := flag.Bool("shuffle", false, "")
 	flag.Parse()
 
 	var questions map[string]int
@@ -85,12 +90,38 @@ func main() {
 
 	correctAnswers := 0
 
-	for k, v := range questions {
-		fmt.Printf("%s: ", k)
-		answer := input()
+	if *shuffle {
+		rand.Seed(time.Now().UnixNano())
+		// todo: fix shuffling function
+		rand.Shuffle(len(questions), func(i int, j int) {})
+	}
 
-		if answer == v {
-			correctAnswers++
+	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
+
+QuestionLoop:
+	for k, v := range questions {
+		select {
+		case <-timer.C:
+			break QuestionLoop
+		default:
+		}
+
+		fmt.Printf("%s: ", k)
+
+		answer := make(chan int)
+
+		go func() {
+			ans := input()
+			answer <- ans
+		}()
+
+		select {
+		case <-timer.C:
+			break QuestionLoop
+		case ans := <-answer:
+			if ans == v {
+				correctAnswers++
+			}
 		}
 	}
 
