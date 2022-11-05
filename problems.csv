@@ -1,0 +1,4 @@
+# Questions must never evaluate to 0 or -1
+"What is 1 + 2?",3
+"What is 2 + 4?",6
+"What is 0 + 5?",5
